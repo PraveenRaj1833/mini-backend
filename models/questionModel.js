@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const autoIncrement = require('mongoose-auto-increment')
 
-const connection = mongoose.createConnection("mongodb://localhost/mini")
+const connection = mongoose.createConnection("mongodb+srv://Praveen:praveen123@cluster0.dav3l.mongodb.net/mini?retryWrites=true&w=majority")
 autoIncrement.initialize(connection)
 
 const questionSchema = mongoose.Schema({
