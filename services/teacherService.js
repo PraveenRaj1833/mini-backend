@@ -1,24 +1,22 @@
-// const studentCourseNew1 = require('../models/studentCourse');
-const student=require('../models/studentModel');
+const teacher = require('../models/teacherModel');
 const course = require('../models/courseModel');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const branch = require('../models/branchModel');
 const login = require('../models/loginModel');
+const teacherCourse = require('../models/teacherCourseModel');
 const studentCourse = require('../models/studentCourseModel');
-// const { json } = require('express');
-// const student = require('../models/studentModel');
 
-const addStudent = async (req,res)=>{
-    console.log(req.body.name , req.body.studentId , req.body.password );
+const addTeacher = async (req,res)=>{
+    console.log(req.body.name , req.body.teacherId , req.body.password );
     const passwd = await bcryptjs.hash(req.body.password,10);
-    const student1 =  new student({
+    const teacher1 =  new teacher({
         name: req.body.name,
-        studentId : req.body.studentId,
+        teacherId : req.body.teacherId,
         email : req.body.email,
         phone : req.body.phone,
-        role : req.body.role,
         gender : req.body.gender,
+        role : req.body.role,
         branchId : req.body.branchId,
         address : {
             houseNo : req.body.houseNo,
@@ -27,23 +25,21 @@ const addStudent = async (req,res)=>{
             state : req.body.state,
             pincode : req.body.pincode
         },
-        year : req.body.year,
-        class : req.body.class
     });
 
     const login1 = new login({
-        userId : req.body.studentId,
+        userId : req.body.teacherId,
         password : passwd
     })
 
     await branch.findOne({branchId : req.body.branchId}).then(async (result) => {
         if(result!=null) {
-            await student1.save().then(async (result)=>{
+            await teacher1.save().then(async (result)=>{
                 // res.status(200).json({meesage:"created succesfully"})
                 await login1.save().then(result1=>{
                     res.status(200).json({msg:"inserted Succesfully",result,status:200});
                 }).catch(async (err)=>{
-                    await student.deleteOne({studentId:req.body.studentId}).then(result2=>{
+                    await teacher.deleteOne({teacherId:req.body.teacherId}).then(result2=>{
                         res.status(400).json({msg : "failed to insert",result:result2,err:err,status:400});
                     }).catch(err1=>{
                         res.status(200).json({msg: "failed to insert",status:400,err:err1})
@@ -58,39 +54,39 @@ const addStudent = async (req,res)=>{
     })
 }
 
-const getStudents = async (req,res) => {
+const getTeachers = async (req,res) => {
     console.log("services working");
-    await student.find().then(results=>{
+    await teacher.find().then(results=>{
         console.log(results);
         const obj = {status:200,results};
         console.log(obj);
         // return obj;
         res.status(200).json({results});
     }).catch(err => {
-        res.status(400).json({results : output});
+        res.status(400).json({results : output,err});
         // return {status:400,err};
     })
 }
 
-const getStudentById = async (req,res)=>{
-    await student.findOne({studentId : req.body.studentId}).then(result=>{
+const getTeacherById = async (req,res)=>{
+    await teacher.findOne({teacherId : req.body.teacherId}).then(result=>{
         res.status(200).json({status:200,result});
     }).catch(err=>{
         res.status(400).json({status:400,err});
     })
 }
 
-const registerCourse = async (req,res)=>{
+const teachCourse = async (req,res)=>{
     const token = req.headers.authorization.split(" ")[1];
-    const studentCourse1 = new studentCourse({
-        studentId : req.body.studentId,
+    const teacherCourse1 = new teacherCourse({
+        teacherId : req.body.teacherId,
         courseId : req.body.courseId,
         fromDate : req.body.fromDate,
         toDate : req.body.toDate,
         sem : req.body.sem  
     })
 
-    const pl = await jwt.verify(token,"student",(err,payload)=>{
+    const pl = await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
             res.send(err)
         } else {
@@ -98,22 +94,22 @@ const registerCourse = async (req,res)=>{
         }
     })
 
-    if(pl.studentId!==req.body.studentId) {
+    if(pl.teacherId!==req.body.teacherId) {
         res.status(400).json({msg : "You dont have access to other's courses",status:400});
     }
 
-    await student.find({studentId : req.body.studentId})
+    await teacher.find({teacherId : req.body.teacherId})
     .then(async (results)=>{
         if(results.length==0)
-            res.status(400).json({msg : "Student Id does not exist",status:400});
+            res.status(400).json({msg : "Teacher Id does not exist",status:400});
         else {
             await course.find({courseId : req.body.courseId})
             .then(async (results1) => {
                 if(results1.length==0)
                     res.status(400).json({status : 400,msg : "Course Id does not exist"});
                 else {
-                    await studentCourse1.save().then(result2=>{
-                        res.status(200).json({status:200,msg : "registered Succesfully",result : result2});
+                    await teacherCourse1.save().then(result2=>{
+                        res.status(200).json({status:200,msg : "Course added Succesfully",result : result2});
                     }).catch(err2=>{res.status(400).json({status:400,msg : "something went wrong1",error : err2})});
                 }
             }).catch(err1=>{res.status(400).json({status : 400, msg : "something went wrong2",error : err1})});
@@ -122,7 +118,7 @@ const registerCourse = async (req,res)=>{
 }
 
 const getCourses = async (req,res) => {
-    await studentCourse.find({studentId : req.body.studentId}).then(results=>{
+    await teacherCourse.find({teacherId : req.body.teacherId}).then(results=>{
         res.status(200).json({status:200,results});
     }).catch(err=>{
         res.status(400).json({status:400,err});
@@ -130,14 +126,22 @@ const getCourses = async (req,res) => {
     
 }
 
-const studentLogin = async (req,res) => {
+const getStudentsByCourse = async (req,res) => {
+    await studentCourse.find({courseId : req.body.courseId}).then(results => {
+        res.status(200).json({status:200,results});
+    }).catch(err=>{
+        res.status(400).json({status:400,err});
+    })
+}
+
+const teacherLogin = async (req,res) => {
     const {userId,password} = req.body;
     const login1 = await login.findOne({userId : userId});
     if(login1!=null) {
         if(await bcryptjs.compare(password,login1.password)) {
-            const token = await generateToken({studentId:userId,role : "student"});
-            const student1 = await student.findOne({studentId : userId});
-            res.status(200).json({status:200,token,student:student1});
+            const token = await generateToken({teacherId:userId,role : "teacher"});
+            const teacher1 = await teacher.findOne({teacherId : userId});
+            res.status(200).json({status:200,token,teacher:teacher1});
         }
         else 
         res.status(400).json({status:400,msg:"Incorrect Password"});
@@ -148,25 +152,25 @@ const studentLogin = async (req,res) => {
 }
 
 const generateToken = async (payload) => {
-    return await jwt.sign(payload,"student",{expiresIn : 500});
+    return await jwt.sign(payload,"teacher",{expiresIn : 500});
 }
 
-const studentUpdate = async (req,res) => {
+const teacherUpdate = async (req,res) => {
     const token = req.headers.authorization.split(" ")[1];
-    const pl =await jwt.verify(token,"student",(err,payload)=>{
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
             res.send(err)
         } else {
             return payload;
         }
     });
-    if(pl.studentId!==req.body.studentId){
+    if(pl.teacherId!==req.body.teacherId){
         res.status(400).json({msg : "Authentication error",status : 400})
     }
 
-    const student1 =  {
+    const teacher1 =  {
         name: req.body.name,
-        studentId : req.body.studentId,
+        teacherId : req.body.teacherId,
         email : req.body.email,
         phone : req.body.phone,
         role : req.body.role,
@@ -179,13 +183,11 @@ const studentUpdate = async (req,res) => {
             state : req.body.state,
             pincode : req.body.pincode
         },
-        year : req.body.year,
-        class : req.body.class
     };
 
     await branch.findOne({branchId : req.body.branchId}).then(async (result1) => {
         if(result1!=null) {
-            await student.findOneAndUpdate({studentId : req.body.studentId},{$set : student1},{new : true}).then(async (result)=>{
+            await teacher.findOneAndUpdate({teacherId : req.body.teacherId},{$set : teacher1},{new : true}).then(async (result)=>{
                 // res.status(200).json({meesage:"created succesfully"})
                 res.status(200).json({msg:"Details Updated Succesfully",result,status:200});
                 }).catch(err1=>{
@@ -202,7 +204,7 @@ const studentUpdate = async (req,res) => {
 
 const passwordUpdate = async (req,res)=>{
     const token = req.headers.authorization.split(" ")[1];
-    const pl =await jwt.verify(token,"student",(err,payload)=>{
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
             res.send(err)
         } else {
@@ -211,7 +213,7 @@ const passwordUpdate = async (req,res)=>{
     });
     console.log("payload");
     console.log(pl);
-    if(pl.studentId!==req.body.userId){
+    if(pl.teacherId!==req.body.userId){
         res.status(400).json({msg : "Authentication error",status : 400})
     }
 
@@ -238,4 +240,5 @@ const passwordUpdate = async (req,res)=>{
     }
 }
 
-module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,studentUpdate,passwordUpdate};
+module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
+                    ,getStudentsByCourse};
