@@ -10,7 +10,8 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended : true}))
 
-mongoose.connect('mongodb+srv://Praveen:praveen123@cluster0.dav3l.mongodb.net/mini?retryWrites=true&w=majority',{useNewUrlParser:true})
+const url = 'mongodb+srv://Praveen:praveen123@cluster0.dav3l.mongodb.net/mini?retryWrites=true&w=majority'
+mongoose.connect(url,{useNewUrlParser:true})
 .then(()=>console.log("database connected"));
 
 app.use('/',routes);
