@@ -1,7 +1,9 @@
 const express = require('express')
 const {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,studentUpdate,passwordUpdate} = require('../services/studentService');
 
+const cors = require('cors')
 const app = express()
+app.use(cors())
 
 app.get('/getAll',getStudents);
 

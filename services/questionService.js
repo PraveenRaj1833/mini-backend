@@ -29,7 +29,7 @@ const addQuestion = async (req,res)=>{
         qType : req.body.qType,
         marks : req.body.marks
     });
-    question1.save().then(result=>{
+    await question1.save().then(result=>{
         res.status(200).json({msg:"inserted succesfully",result});
     }).catch(err=>{
         res.status(400).json({err});

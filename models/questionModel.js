@@ -27,7 +27,7 @@ const questionSchema = mongoose.Schema({
     }
 });
 
-questionSchema.plugin(autoIncrement.plugin,{model:'question',field : 'optionId'});
+questionSchema.plugin(autoIncrement.plugin,{model:'question',field : 'questionId'});
 
 const question = mongoose.model('question',questionSchema);
 

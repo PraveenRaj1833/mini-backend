@@ -6,6 +6,10 @@ const branch = require('../models/branchModel');
 const login = require('../models/loginModel');
 const teacherCourse = require('../models/teacherCourseModel');
 const studentCourse = require('../models/studentCourseModel');
+const test = require('../models/testModel');
+const question = require('../models/questionModel');
+const option = require('../models/optionModel');
+const questionOption = require('../models/questionOptionModel');
 
 const addTeacher = async (req,res)=>{
     console.log(req.body.name , req.body.teacherId , req.body.password );
@@ -240,5 +244,74 @@ const passwordUpdate = async (req,res)=>{
     }
 }
 
+
+const createTest = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).send(err)
+        } else {
+            return payload;
+        }
+    });
+
+    const questions = req.body.questions;
+    const test1 = new test({
+        courseId : req.body.courseId,
+        duration : req.body.duration,
+        totalMarks : req.body.totalMarks,
+        dateTime : req.body.dateTime
+    });
+
+    const courseExist = await course.findOne({courseId : req.body.courseId});
+    if(courseExist===null)
+        res.status(400).json({msg : "Course Does Not Exist"});
+    else{
+        await test1.save().then(async (result)=>{
+            const testId = result.testId;
+            for(i=0;i<questions.length;i++){
+                console.log(`question ${i}`);
+                console.log(questions[i]);
+                const question1 = new question({
+                    testId : testId,
+                    desc :  questions[i].desc,
+                    qType : questions[i].qType,
+                    marks : questions[i].marks
+                });
+                await question1.save().then(async (result1)=>{
+                    const questionId = result1.questionId;
+                    const opts = questions[i].options;
+                    console.log(opts);
+                    for(j=0;j<opts.length;j++){
+                        const option1 = new option({
+                            questionId : questionId,
+                            desc : opts[j].desc
+                        });
+                        await option1.save().then(async (result2)=>{
+                            const optionId = result2.optionId;
+                            if(j===questions[i].right){
+                                const questionOption1 = new questionOption({
+                                    questionId : questionId,
+                                    optionId : optionId
+                                });
+                                await questionOption1.save().catch(err3=>{
+                                    res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                })
+                            }
+                        }).catch(err2=>{
+                            res.status(400).json({err:err2,msg : "option gone wrong"})
+                        })
+                    }
+                }).catch(err1=>{
+                    res.status(400).json({err:err1,msg : "question gone wrong"})
+                })
+            }
+            res.status(200).json({msg : "test Created succesfully",result});
+        }).catch(err=>{
+            res.status(400).json({err,msg : "test gone wrong"})
+        })
+    }
+}
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
-                    ,getStudentsByCourse};
+                    ,getStudentsByCourse,createTest};

@@ -1,8 +1,10 @@
 const express = require('express')
 const {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,
-    passwordUpdate,getStudentsByCourse} = require('../services/teacherService')
+    passwordUpdate,getStudentsByCourse,createTest} = require('../services/teacherService')
 
+const cors = require('cors')
 const app = express()
+app.use(cors())
 
 app.post('/add',addTeacher);
 
@@ -21,5 +23,7 @@ app.post('/login',teacherLogin);
 app.post('/updateTeacher',teacherUpdate);
 
 app.post('/updatePassword',passwordUpdate);
+
+app.post('/createTest',createTest);
 
 module.exports = app;
