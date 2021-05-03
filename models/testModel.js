@@ -17,6 +17,11 @@ const testSchema = mongoose.Schema({
     totalMarks: {
         type : Number,        //error  (no double)
         required : true               
+    },
+    duration : {
+        type : Number,
+        required : true,
+        trim : true
     }
 });
 
