@@ -122,8 +122,24 @@ const registerCourse = async (req,res)=>{
 }
 
 const getCourses = async (req,res) => {
-    await studentCourse.find({studentId : req.body.studentId}).then(results=>{
-        res.status(200).json({status:200,results});
+    await studentCourse.find({studentId : req.body.studentId}).then(async (results)=>{
+        const regCourses = [];
+        for(i=0;i<results.length;i++){
+            const c = await course.findOne({courseId : results[i].courseId});
+            // result.courseName = c.courseName;
+            // result.credits = c.credits;
+            const result = {
+                sem : results[i].sem,
+                fromDate : results[i].fromDate,
+                toDate : results[i].toDate, 
+                courseName : c.courseName,
+                credits  : c.credits
+            }
+            // console.log(result)
+            // console.log(c)
+            regCourses.push(result)
+        }
+        res.status(200).json({status:200,results:regCourses});
     }).catch(err=>{
         res.status(400).json({status:400,err});
     })
