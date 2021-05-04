@@ -16,6 +16,7 @@ app.use(function(req,res,next){
     next();
 });
 
+
 const url = 'mongodb+srv://Praveen:praveen123@cluster0.dav3l.mongodb.net/mini?retryWrites=true&w=majority'
 mongoose.connect(url,{useNewUrlParser:true})
 .then(()=>console.log("database connected"));

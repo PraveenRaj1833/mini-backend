@@ -17,8 +17,8 @@ app.post('/login',studentLogin);
 
 app.post('/getCourses',getCourses);
 
-app.post('/updateStudent',studentUpdate);
+app.patch('/updateStudent',studentUpdate);
 
-app.post('/updatePassword',passwordUpdate);
+app.patch('/updatePassword',passwordUpdate);
 
 module.exports = app;
