@@ -12,7 +12,7 @@ app.use(express.urlencoded({extended : true}))
 
 app.use(function(req,res,next){
     res.setHeader('Access-Control-Allow-Origin','*');
-    res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS, PATCH');
     next();
 });
 
