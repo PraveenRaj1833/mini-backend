@@ -247,6 +247,7 @@ const passwordUpdate = async (req,res)=>{
 
 const createTest = async (req,res)=>{
     const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
             res.status(402).send(err)
@@ -264,9 +265,9 @@ const createTest = async (req,res)=>{
     });
 
     const courseExist = await course.findOne({courseId : req.body.courseId});
-    // if(courseExist===null)
-    //     res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
-    // else{
+    if(courseExist===null)
+        res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
+    else{
         await test1.save().then(async (result)=>{
             const testId = result.testId;
             for(i=0;i<questions.length;i++){
@@ -289,7 +290,7 @@ const createTest = async (req,res)=>{
                         });
                         await option1.save().then(async (result2)=>{
                             const optionId = result2.optionId;
-                            if(j===questions[i].right){
+                            if(j===parseInt(questions[i].right)){
                                 const questionOption1 = new questionOption({
                                     questionId : questionId,
                                     optionId : optionId
@@ -310,7 +311,7 @@ const createTest = async (req,res)=>{
         }).catch(err=>{
             res.status(400).json({err,msg : "test gone wrong"})
         })
-    // }
+    }
 }
 
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
