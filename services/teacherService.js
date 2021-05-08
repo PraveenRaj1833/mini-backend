@@ -264,9 +264,9 @@ const createTest = async (req,res)=>{
     });
 
     const courseExist = await course.findOne({courseId : req.body.courseId});
-    if(courseExist===null)
-        res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
-    else{
+    // if(courseExist===null)
+    //     res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
+    // else{
         await test1.save().then(async (result)=>{
             const testId = result.testId;
             for(i=0;i<questions.length;i++){
@@ -310,7 +310,7 @@ const createTest = async (req,res)=>{
         }).catch(err=>{
             res.status(400).json({err,msg : "test gone wrong"})
         })
-    }
+    // }
 }
 
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
