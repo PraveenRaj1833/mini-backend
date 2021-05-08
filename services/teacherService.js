@@ -265,7 +265,7 @@ const createTest = async (req,res)=>{
 
     const courseExist = await course.findOne({courseId : req.body.courseId});
     if(courseExist===null)
-        res.status(400).json({msg : "Course Does Not Exist",courseId : req.body.courseId});
+        res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
     else{
         await test1.save().then(async (result)=>{
             const testId = result.testId;
