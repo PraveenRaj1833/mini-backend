@@ -18,4 +18,13 @@ const getCourses = async (req,res)=>{
     res.status(200).json({results: output});
 }
 
-module.exports = {addCourse,getCourses};
+const getCourseById = async (req,res)=>{
+    await course.findOne({courseId : req.body.courseId}).then(result=>{
+        res.status(200).json({result,status:200});
+    }).catch(err=>{
+        res.status(400).json({err,status:400});
+    })
+    
+}
+
+module.exports = {addCourse,getCourses,getCourseById};

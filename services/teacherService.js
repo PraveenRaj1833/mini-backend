@@ -314,5 +314,85 @@ const createTest = async (req,res)=>{
     }
 }
 
+const getTests = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).send(err)
+        } else {
+            return payload;
+        }
+    });
+
+    await test.find({courseId : req.body.courseId}).then(results=>{
+        res.status(200).json({status : 200,results});
+    }).catch(err=>{
+        res.status(400).json({status : 400,err});
+    })
+}
+
+const getTestDetails = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).send(err)
+        } else {
+            return payload;
+        }
+    });
+    console.log(req.body.testId);
+    await test.findOne({testId : req.body.testId}).then(async (result1) => {
+        console.log(result1);
+        if(result1!==null){
+            await question.find({testId : req.body.testId}).then(async (result2)=>{
+                console.log(result2);
+                const questions = [];
+                for(i=0;i<result2.length;i++){
+                    console.log("Q"+i);
+                    console.log(result2[i].questionId);
+                    const options =  await option.find({questionId : result2[i].questionId})
+                    .catch(err2=>{
+                        res.status(400).json({err:err2,msg : "options went wrong",status:400});
+                    });
+                    console.log(options);
+                    const right = await questionOption.findOne({questionId : result2[i].questionId})
+                    .catch(err3=>{
+                        res.status(400).json({err:err3,msg : "right went wrong",status:400});
+                    });
+                    console.log(right);
+
+                    const obj = {
+                        questionId : result2[i].questionId,
+                        desc : result2[i].desc,
+                        qType : result2[i].qType,
+                        marks : result2[i].marks,
+                        options : options,
+                        right : right.optionId
+                    };
+                    questions.push(obj);
+                }
+                const result = {
+                    testId : result1.testId,
+                    totalMarks : result1.totalMarks,
+                    dateTime : result1.dateTime,
+                    duration : result1.duration,
+                    courseId : result1.courseId,
+                    questions : questions
+                }
+                res.status(200).json({status : 200,result});
+            }).catch(err4=>{
+                res.status(400).json({err:err4,msg : "questions went wrong",status:400});
+            });
+        }
+        else{
+            res.status(400).json({status : 400,msg:"test Id not Found"});
+        }
+    }).catch(err1 => {
+        res.status(400).json({status : 400,err : err1,msg:"something went wrong"});
+    })
+}
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
-                    ,getStudentsByCourse,createTest};
+                    ,getStudentsByCourse,createTest,getTests , getTestDetails};
