@@ -92,7 +92,7 @@ const teachCourse = async (req,res)=>{
 
     const pl = await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -156,14 +156,14 @@ const teacherLogin = async (req,res) => {
 }
 
 const generateToken = async (payload) => {
-    return await jwt.sign(payload,"teacher",{expiresIn : 500});
+    return await jwt.sign(payload,"teacher",{expiresIn : 1800});
 }
 
 const teacherUpdate = async (req,res) => {
     const token = req.headers.authorization.split(" ")[1];
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -210,7 +210,7 @@ const passwordUpdate = async (req,res)=>{
     const token = req.headers.authorization.split(" ")[1];
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -250,7 +250,7 @@ const createTest = async (req,res)=>{
     console.log(req.body);
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.status(402).send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -319,7 +319,7 @@ const getTests = async (req,res)=>{
     console.log(req.body);
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.status(402).send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -337,7 +337,7 @@ const getTestDetails = async (req,res)=>{
     console.log(req.body);
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.status(402).send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }

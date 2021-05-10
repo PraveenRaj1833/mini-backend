@@ -92,7 +92,7 @@ const registerCourse = async (req,res)=>{
 
     const pl = await jwt.verify(token,"student",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -164,14 +164,14 @@ const studentLogin = async (req,res) => {
 }
 
 const generateToken = async (payload) => {
-    return await jwt.sign(payload,"student",{expiresIn : 500});
+    return await jwt.sign(payload,"student",{expiresIn : 1800});
 }
 
 const studentUpdate = async (req,res) => {
     const token = req.headers.authorization.split(" ")[1];
     const pl =await jwt.verify(token,"student",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
@@ -220,7 +220,7 @@ const passwordUpdate = async (req,res)=>{
     const token = req.headers.authorization.split(" ")[1];
     const pl =await jwt.verify(token,"student",(err,payload)=>{
         if(err){
-            res.send(err)
+            res.status(402).json({status : 402,err});
         } else {
             return payload;
         }
