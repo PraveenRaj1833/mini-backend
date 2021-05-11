@@ -6,6 +6,10 @@ const jwt = require('jsonwebtoken');
 const branch = require('../models/branchModel');
 const login = require('../models/loginModel');
 const studentCourse = require('../models/studentCourseModel');
+const test = require('../models/testModel');
+const question = require('../models/questionModel');
+const option = require('../models/optionModel');
+const questionOption = require('../models/questionOptionModel');
 // const { json } = require('express');
 // const student = require('../models/studentModel');
 
@@ -133,7 +137,8 @@ const getCourses = async (req,res) => {
                 fromDate : results[i].fromDate,
                 toDate : results[i].toDate, 
                 courseName : c.courseName,
-                credits  : c.credits
+                credits  : c.credits,
+                courseId : c.courseId
             }
             // console.log(result)
             // console.log(c)
@@ -254,4 +259,80 @@ const passwordUpdate = async (req,res)=>{
     }
 }
 
-module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,studentUpdate,passwordUpdate};
+const getTests = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    await test.find({courseId : req.body.courseId}).then(results=>{
+        res.status(200).json({status : 200,results});
+    }).catch(err=>{
+        res.status(400).json({status : 400,err});
+    })
+}
+
+
+const attempTest = async (req,res)=>{
+    const token = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+    
+    await test.findOne({testId : req.body.testId}).then(async (result1) => {
+        console.log(result1);
+        if(result1!==null){
+            await question.find({testId : req.body.testId}).then(async (result2)=>{
+                console.log(result2);
+                const questions = [];
+                for(i=0;i<result2.length;i++){
+                    console.log("Q"+i);
+                    console.log(result2[i].questionId);
+                    const options =  await option.find({questionId : result2[i].questionId})
+                    .catch(err2=>{
+                        res.status(400).json({err:err2,msg : "options went wrong",status:400});
+                    });
+                    console.log(options);
+
+                    const obj = {
+                        questionId : result2[i].questionId,
+                        desc : result2[i].desc,
+                        qType : result2[i].qType,
+                        marks : result2[i].marks,
+                        options : options
+                    };
+                    questions.push(obj);
+                }
+                const result = {
+                    testId : result1.testId,
+                    totalMarks : result1.totalMarks,
+                    dateTime : result1.dateTime,
+                    duration : result1.duration,
+                    courseId : result1.courseId,
+                    questions : questions
+                }
+                res.status(200).json({status : 200,result});
+            }).catch(err4=>{
+                res.status(400).json({err:err4,msg : "questions went wrong",status:400});
+            });
+        }
+        else{
+            res.status(400).json({status : 400,msg:"test Id not Found"});
+        }
+    }).catch(err1 => {
+        res.status(400).json({status : 400,err : err1,msg:"something went wrong"});
+    })
+}
+
+
+module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,
+    studentUpdate,passwordUpdate,attempTest,getTests};
