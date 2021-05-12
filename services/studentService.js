@@ -10,6 +10,7 @@ const test = require('../models/testModel');
 const question = require('../models/questionModel');
 const option = require('../models/optionModel');
 const questionOption = require('../models/questionOptionModel');
+const studentOption = require('../models/studentOptionModel');
 // const { json } = require('express');
 // const student = require('../models/studentModel');
 
@@ -333,6 +334,32 @@ const attempTest = async (req,res)=>{
     })
 }
 
+const submitTest = async (req,res)=>{
+    const token = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    const answers = req.body.answers;
+    const studentId = req.body.studentId;
+    for(i=0;i<answers.length;i++){
+        const studentOption1 = new studentOption({
+            studentId : studentId,
+            questionId : answers[i].questionId,
+            optionId : answers[i].optionId
+        });
+        await studentOption1.save().then(result=>{
+            console.log(result);
+        }).catch(err=>{
+            res.status(400).json({err:err,msg : "something went wrong",status:400});
+        })
+    }
+    res.status(200).json({status : 200,msg : "Test Submitted Succesfully"});
+}
 
 module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,
-    studentUpdate,passwordUpdate,attempTest,getTests};
+    studentUpdate,passwordUpdate,attempTest,getTests,submitTest};
