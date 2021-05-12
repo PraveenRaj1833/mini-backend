@@ -352,11 +352,13 @@ const submitTest = async (req,res)=>{
             questionId : answers[i].questionId,
             optionId : answers[i].optionId
         });
-        await studentOption1.save().then(result=>{
-            console.log(result);
-        }).catch(err=>{
-            res.status(400).json({err:err,msg : "something went wrong",status:400});
-        })
+        if(answers[i].optionId!=="" && answers[i].optionId!==null){
+            await studentOption1.save().then(result=>{
+                console.log(result);
+            }).catch(err=>{
+                res.status(400).json({err:err,msg : "something went wrong",status:400});
+            })
+        }
     }
     res.status(200).json({status : 200,msg : "Test Submitted Succesfully"});
 }
