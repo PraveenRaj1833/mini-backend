@@ -14,7 +14,12 @@ const studentAnswerSchema = mongoose.Schema({
     description : {
         type : String,
         trim : true,
-        required : true
+        //required : true
+    },
+    marks : {
+        type : Number,
+        trim : true,
+        // required : true
     }
 })
 

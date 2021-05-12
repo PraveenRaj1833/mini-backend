@@ -22,6 +22,16 @@ const testSchema = mongoose.Schema({
         type : Number,
         required : true,
         trim : true
+    },
+    testType : {
+        type : String,
+        required : true,
+        trim : true
+    },
+    testName : {
+        type : String,
+        required : true,
+        trim : true
     }
 });
 

@@ -11,6 +11,7 @@ const question = require('../models/questionModel');
 const option = require('../models/optionModel');
 const questionOption = require('../models/questionOptionModel');
 const studentOption = require('../models/studentOptionModel');
+const studentAnswer = require('../models/studentAnswerModel');
 // const { json } = require('express');
 // const student = require('../models/studentModel');
 
@@ -298,20 +299,31 @@ const attempTest = async (req,res)=>{
                 for(i=0;i<result2.length;i++){
                     console.log("Q"+i);
                     console.log(result2[i].questionId);
-                    const options =  await option.find({questionId : result2[i].questionId})
-                    .catch(err2=>{
-                        res.status(400).json({err:err2,msg : "options went wrong",status:400});
-                    });
-                    console.log(options);
+                    if(result2[i].qType==="mcqs" || result2[i].qType==="checkBox"){
+                        const options =  await option.find({questionId : result2[i].questionId})
+                        .catch(err2=>{
+                            res.status(400).json({err:err2,msg : "options went wrong",status:400});
+                        });
+                        console.log(options);
 
-                    const obj = {
-                        questionId : result2[i].questionId,
-                        desc : result2[i].desc,
-                        qType : result2[i].qType,
-                        marks : result2[i].marks,
-                        options : options
-                    };
-                    questions.push(obj);
+                        const obj = {
+                            questionId : result2[i].questionId,
+                            desc : result2[i].desc,
+                            qType : result2[i].qType,
+                            marks : result2[i].marks,
+                            options : options
+                        };
+                        questions.push(obj);
+                    }
+                    else{
+                        const obj = {
+                            questionId : result2[i].questionId,
+                            desc : result2[i].desc,
+                            qType : result2[i].qType,
+                            marks : result2[i].marks,
+                        };
+                        questions.push(obj);
+                    }
                 }
                 const result = {
                     testId : result1.testId,
@@ -319,6 +331,8 @@ const attempTest = async (req,res)=>{
                     dateTime : result1.dateTime,
                     duration : result1.duration,
                     courseId : result1.courseId,
+                    testName : result1.testName,
+                    testType : result1.testType,
                     questions : questions
                 }
                 res.status(200).json({status : 200,result});
@@ -347,19 +361,50 @@ const submitTest = async (req,res)=>{
     const answers = req.body.answers;
     const studentId = req.body.studentId;
     for(i=0;i<answers.length;i++){
-        const studentOption1 = new studentOption({
-            studentId : studentId,
-            questionId : answers[i].questionId,
-            optionId : answers[i].optionId
-        });
-        if(answers[i].optionId!=="" && answers[i].optionId!==null){
-            await studentOption1.save().then(result=>{
+        if(answers[i].qType==="mcqs"){
+            const studentOption1 = new studentOption({
+                studentId : studentId,
+                questionId : answers[i].questionId,
+                optionId : answers[i].optionId
+            });
+            if(answers[i].optionId!=="" && answers[i].optionId!==null){
+                await studentOption1.save().then(result=>{
+                    console.log(result);
+                }).catch(err=>{
+                    res.status(400).json({err:err,msg : "something went wrong",status:400});
+                })
+            }
+        }
+        else if(answers[i].qType==="checkBox"){
+            for(j=0;j<answers[i].options.length;j++){
+                const studentOption1 = new studentOption({
+                    studentId : studentId,
+                    questionId : answers[i].questionId,
+                    optionId : answers[i].options[j]
+                })
+                studentOption1.save().then(result=>{
+                    console.log(result);
+                }).catch(err=>{
+                    res.status(400).json({err:err,msg : "something went wrong",status:400});
+                });
+            }
+        }
+        else{
+            const studentAnswer1 = new studentAnswer({
+                studentId : studentId,
+                questionId : answers[i].questionId,
+                description : answers[i].answer
+            });
+            studentAnswer1.save().then(result=>{
                 console.log(result);
             }).catch(err=>{
                 res.status(400).json({err:err,msg : "something went wrong",status:400});
-            })
+            });
         }
     }
+    // if(req.body.testType==="mcqs"){
+
+    // }
     res.status(200).json({status : 200,msg : "Test Submitted Succesfully"});
 }
 

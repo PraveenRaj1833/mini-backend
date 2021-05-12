@@ -261,7 +261,9 @@ const createTest = async (req,res)=>{
         courseId : req.body.courseId,
         duration : req.body.duration,
         totalMarks : req.body.totalMarks,
-        dateTime : req.body.dateTime
+        dateTime : req.body.dateTime,
+        testType : req.body.testType,
+        testName : req.body.testName
     });
 
     const courseExist = await course.findOne({courseId : req.body.courseId});
@@ -281,27 +283,43 @@ const createTest = async (req,res)=>{
                 });
                 await question1.save().then(async (result1)=>{
                     const questionId = result1.questionId;
-                    const opts = questions[i].options;
-                    console.log(opts);
-                    for(j=0;j<opts.length;j++){
-                        const option1 = new option({
-                            questionId : questionId,
-                            desc : opts[j].desc
-                        });
-                        await option1.save().then(async (result2)=>{
-                            const optionId = result2.optionId;
-                            if(j===parseInt(questions[i].right)){
-                                const questionOption1 = new questionOption({
-                                    questionId : questionId,
-                                    optionId : optionId
-                                });
-                                await questionOption1.save().catch(err3=>{
-                                    res.status(400).json({err : err3,msg : "questionOption gone wrong"})
-                                })
-                            }
-                        }).catch(err2=>{
-                            res.status(400).json({err:err2,msg : "option gone wrong"})
-                        })
+                    if(questions[i].qType==="mcqs" || questions[i].qType==="checkBox"){
+                        const opts = questions[i].options;
+                        console.log(opts);
+                        for(j=0;j<opts.length;j++){
+                            const option1 = new option({
+                                questionId : questionId,
+                                desc : opts[j].desc
+                            });
+                            await option1.save().then(async (result2)=>{
+                                const optionId = result2.optionId;
+                                if(questions[i].qType==="mcqs"){
+                                    if(j===parseInt(questions[i].right)){
+                                        const questionOption1 = new questionOption({
+                                            questionId : questionId,
+                                            optionId : optionId
+                                        });
+                                        await questionOption1.save().catch(err3=>{
+                                            res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                        })
+                                    }
+                                }
+                                if(questions[i].qType==="checkBox"){
+                                    if(questions[i].right.includes(j)){
+                                        const questionOption1 = new questionOption({
+                                            questionId : questionId,
+                                            optionId : optionId
+                                        });
+                                        await questionOption1.save().catch(err3=>{
+                                            res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                        })
+                                    }
+                                }
+                                
+                            }).catch(err2=>{
+                                res.status(400).json({err:err2,msg : "option gone wrong"})
+                            })
+                        }
                     }
                 }).catch(err1=>{
                     res.status(400).json({err:err1,msg : "question gone wrong"})
@@ -352,33 +370,58 @@ const getTestDetails = async (req,res)=>{
                 for(i=0;i<result2.length;i++){
                     console.log("Q"+i);
                     console.log(result2[i].questionId);
-                    const options =  await option.find({questionId : result2[i].questionId})
-                    .catch(err2=>{
-                        res.status(400).json({err:err2,msg : "options went wrong",status:400});
-                    });
-                    console.log(options);
-                    const right = await questionOption.findOne({questionId : result2[i].questionId})
-                    .catch(err3=>{
-                        res.status(400).json({err:err3,msg : "right went wrong",status:400});
-                    });
-                    console.log(right);
-
-                    const obj = {
-                        questionId : result2[i].questionId,
-                        desc : result2[i].desc,
-                        qType : result2[i].qType,
-                        marks : result2[i].marks,
-                        options : options,
-                        right : right.optionId
-                    };
-                    questions.push(obj);
+                    if(result2[i].qType==="mcqs" || result2[i].qType==="checkBox"){
+                        const options =  await option.find({questionId : result2[i].questionId})
+                        .catch(err2=>{
+                            res.status(400).json({err:err2,msg : "options went wrong",status:400});
+                        });
+                        console.log(options);
+                        var right;
+                        if(result2[i].qType==="mcqs"){
+                            right = await questionOption.findOne({questionId : result2[i].questionId})
+                            .catch(err3=>{
+                                res.status(400).json({err:err3,msg : "right went wrong",status:400});
+                            });
+                            console.log(right);
+                            right = right.optionId;
+                        }
+                        else if(result2[i].qType==="checkBox"){
+                            const right1 = await questionOption.find({questionId : result2[i].questionId})
+                            .catch(err3=>{
+                                res.status(400).json({err:err3,msg : "right went wrong",status:400});
+                            });
+                            console.log(right1);
+                            right = right1.map((r1,index)=>{return r1.optionId});
+                            console.log(right);
+                        }     
+                        const obj = {
+                            questionId : result2[i].questionId,
+                            desc : result2[i].desc,
+                            qType : result2[i].qType,
+                            marks : result2[i].marks,
+                            options : options,
+                            right : right
+                        };
+                        questions.push(obj);
+                    }
+                    else{
+                        const obj = {
+                            questionId : result2[i].questionId,
+                            desc : result2[i].desc,
+                            qType : result2[i].qType,
+                            marks : result2[i].marks,
+                        };
+                        questions.push(obj);
+                    }      
                 }
                 const result = {
                     testId : result1.testId,
                     totalMarks : result1.totalMarks,
+                    testType : result1.testType,
                     dateTime : result1.dateTime,
                     duration : result1.duration,
                     courseId : result1.courseId,
+                    testName : result1.testName,
                     questions : questions
                 }
                 res.status(200).json({status : 200,result});

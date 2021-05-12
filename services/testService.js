@@ -13,7 +13,8 @@ const addTest = async (req,res)=>{
         courseId : req.body.courseId,
         duration : req.body.duration,
         totalMarks : req.body.totalMarks,
-        dateTime : req.body.dateTime
+        dateTime : req.body.dateTime,
+        testType : req.body.testType
     });
     await test1.save().then(result => {
         res.status(200).json({msg : "test Created Sucesfully" ,result});
