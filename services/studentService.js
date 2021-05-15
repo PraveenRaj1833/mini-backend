@@ -12,6 +12,7 @@ const option = require('../models/optionModel');
 const questionOption = require('../models/questionOptionModel');
 const studentOption = require('../models/studentOptionModel');
 const studentAnswer = require('../models/studentAnswerModel');
+const studentTest = require('../models/studentTestModel');
 // const { json } = require('express');
 // const student = require('../models/studentModel');
 
@@ -277,8 +278,81 @@ const getTests = async (req,res)=>{
     }).catch(err=>{
         res.status(400).json({status : 400,err});
     })
+    console.log("get tests");
 }
 
+const getTestDetails = async (req,res)=>{
+    const token = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+    await test.findOne({testId : req.body.testId}).then(async (result1) => {
+        console.log(result1);
+        if(result1!==null){
+           
+                await studentTest.findOne({studentId : req.body.studentId,testId : req.body.testId}).then(result=>{
+                    if(result!==null){
+                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                    }
+                }).catch(err=>{
+                    res.status(400).json({status : 400, msg : "something went wrong 1", err});
+                })
+            if(result1.testType==="desc"){
+                await question.find({testId : req.body.testId}).then(async (result2)=>{
+                    console.log(result2);
+                    for(i=0;i<result2.length;i++){
+                        console.log("Q"+i);
+                        console.log(result2[i].questionId);
+                        if(result2[i].qType==="mcqs" || result2[i].qType==="checkBox"){
+    
+                            // if(result1.testType==="desc"){
+                                await studentOption.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                    if(resultt!==null){
+                                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                    }
+                                }).catch(err=>{
+                                    res.status(400).json({status : 400, msg : "something went wrong 2", err});
+                                })
+                            // }
+                        }
+                        else{
+                            await studentAnswer.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                if(resultt!==null){
+                                    res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                }
+                            }).catch(err=>{
+                                res.status(400).json({status : 400, msg : "something went wrong 3", err});
+                            })
+                        }
+                    }
+                    }).catch(err4=>{
+                        res.status(400).json({err:err4,msg : "questions went wrong",status:400});
+                    });
+                }
+            
+                const result = {
+                    testId : result1.testId,
+                    totalMarks : result1.totalMarks,
+                    dateTime : result1.dateTime,
+                    duration : result1.duration,
+                    courseId : result1.courseId,
+                    testName : result1.testName,
+                    testType : result1.testType,
+                }
+                res.status(200).json({status : 200,result});
+        }
+        else{
+            res.status(400).json({status : 400,msg:"test Id not Found"});
+        }
+    }).catch(err1 => {
+        res.status(400).json({status : 400,err : err1,msg:"something went wrong"});
+    })
+
+}
 
 const attempTest = async (req,res)=>{
     const token = req.headers.authorization.split(" ")[1];
@@ -289,10 +363,18 @@ const attempTest = async (req,res)=>{
             return payload;
         }
     });
-    
     await test.findOne({testId : req.body.testId}).then(async (result1) => {
         console.log(result1);
         if(result1!==null){
+           
+                await studentTest.findOne({studentId : req.body.studentId,testId : req.body.testId}).then(result=>{
+                    if(result!==null){
+                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                    }
+                }).catch(err=>{
+                    res.status(400).json({status : 400, msg : "something went wrong 1", err});
+                })
+
             await question.find({testId : req.body.testId}).then(async (result2)=>{
                 console.log(result2);
                 const questions = [];
@@ -300,6 +382,17 @@ const attempTest = async (req,res)=>{
                     console.log("Q"+i);
                     console.log(result2[i].questionId);
                     if(result2[i].qType==="mcqs" || result2[i].qType==="checkBox"){
+
+                        if(result1.testType==="desc"){
+                            await studentOption.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                if(resultt!==null){
+                                    res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                }
+                            }).catch(err=>{
+                                res.status(400).json({status : 400, msg : "something went wrong 2", err});
+                            })
+                        }
+
                         const options =  await option.find({questionId : result2[i].questionId})
                         .catch(err2=>{
                             res.status(400).json({err:err2,msg : "options went wrong",status:400});
@@ -316,6 +409,14 @@ const attempTest = async (req,res)=>{
                         questions.push(obj);
                     }
                     else{
+                        await studentAnswer.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                            if(resultt!==null){
+                                res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                            }
+                        }).catch(err=>{
+                            res.status(400).json({status : 400, msg : "something went wrong 3", err});
+                        })
+
                         const obj = {
                             questionId : result2[i].questionId,
                             desc : result2[i].desc,
@@ -360,6 +461,7 @@ const submitTest = async (req,res)=>{
 
     const answers = req.body.answers;
     const studentId = req.body.studentId;
+    const testId = req.body.testId;
     for(i=0;i<answers.length;i++){
         if(answers[i].qType==="mcqs"){
             const studentOption1 = new studentOption({
@@ -406,7 +508,55 @@ const submitTest = async (req,res)=>{
 
     // }
     res.status(200).json({status : 200,msg : "Test Submitted Succesfully"});
+    if(req.body.testType==="mcqs"){
+        calculateResult(studentId, answers, testId)
+    }
+}
+
+const calculateResult = async (studentId, answers, testId)=>{
+    var marks = 0;
+    for(i=0;i<answers.length;i++){
+        if(answers[i].qType==="mcqs"){
+            await questionOption.findOne({questionId : answers[i].questionId}).then(async (result)=>{
+                if(result!==null){
+                    if(answers[i].optionId===result.optionId)
+                        marks+=answers[i].marks;
+                }
+            }).catch(err=>{
+                console.log(err);
+            })
+        }
+        else if(answers[i].qType==="checkBox"){
+            await questionOption.find({questionId : answers[i].questionId}).then(async (result)=>{
+                if(result.length!==0){
+                    var f=0;
+                    if(result.length===answers[i].options.length){
+                        for(j=0;j<result.length;j++){
+                            if(answers[i].options.includes(result[j].optionId)){
+                                continue;
+                            }
+                            else{
+                                f=1;
+                                break;
+                            }
+                        }
+                        if(f===0 && j===result.length)
+                            marks+=answers[i].marks;
+                    }
+                }
+            })
+        }
+    }
+    const studentTest1 = new studentTest({
+        studentId : studentId,
+        testId : testId,
+        marks : marks
+    });
+    studentTest1.save().then(result=>console.log(result))
+            .catch(err=>{
+                console.log(err);
+            })
 }
 
 module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,
-    studentUpdate,passwordUpdate,attempTest,getTests,submitTest};
+    studentUpdate,passwordUpdate,attempTest,getTests,submitTest,getTestDetails};
