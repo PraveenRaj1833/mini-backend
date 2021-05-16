@@ -388,6 +388,196 @@ const createTest = async (req,res)=>{
     }
 }
 
+
+
+const editTest = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    // console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    const uptest = {
+        testId : req.body.testId,
+        testName : req.body.testName,
+        testType : req.body.testType,
+        duration : req.body.duration,
+        dateTime : req.body.dateTime,
+        totalMarks : req.body.totalMarks,
+        courseId : req.body.courseId
+    }
+
+    await test.findOneAndUpdate({testId : req.body.testId},{$set : uptest},{new:true}).then(async (result)=>{
+        if(result!==null){
+            const testId = result.testId;
+            const delQue = req.body.deletedQues;
+            console.log(delQue);
+            for(i=0;i<delQue.length;i++){
+                console.log(0);
+                const questionId = delQue[i].questionId;
+                console.log(1);
+                await question.deleteOne({questionId : questionId}).catch(err=>{
+                    res.status(400).json({status:400,err:err,msg : "question failed to delete"});
+                });
+                console.log(2);
+                if(delQue[i].qType==="mcqs" || delQue[i].qType==="checkBox"){
+                    console.log(3);
+                    await option.deleteMany({questionId : questionId}).catch(err1=>{
+                        res.status(400).json({status:400,err:err1,msg : "options failed to delete"});
+                    });
+                    console.log(4);
+                    await questionOption.deleteMany({questionId : questionId}).catch(err2=>{
+                        res.status(400).json({status:400,err:err2,msg : "right failed to delete"});
+                    });
+                    // await studentOption.deleteMany({questionId : questionId}).catch(err3=>{
+                    //     res.status(400).json({status:400,err:err3,msg : "student options failed to delete"});
+                    // });
+                    console.log(5);
+                }
+                console.log(6);
+                // else
+                //     await studentAnswer.deleteOne({questionId : questionId}).catch(err=>{
+                //         res.status(400).json({status:400,msg:"deleting question answer went wrong",err});
+                //     });
+            }
+        
+            const questions = req.body.questions;
+            for(i=0;i<questions.length;i++){
+                if(questions[i].questionId===null || questions[i].questionId===''){
+                    const question1 = new question({
+                        testId : testId,
+                        desc :  questions[i].desc,
+                        qType : questions[i].qType,
+                        marks : questions[i].marks
+                    });
+                    await question1.save().then(async (result1)=>{
+                        const questionId = result1.questionId;
+                        if(questions[i].qType==="mcqs" || questions[i].qType==="checkBox"){
+                            const opts = questions[i].options;
+                            // console.log(opts);
+                            for(j=0;j<opts.length;j++){
+                                const option1 = new option({
+                                    questionId : questionId,
+                                    desc : opts[j].desc
+                                });
+                                await option1.save().then(async (result2)=>{
+                                    const optionId = result2.optionId;
+                                    if(questions[i].qType==="mcqs"){
+                                        if(j===parseInt(questions[i].right)){
+                                            const questionOption1 = new questionOption({
+                                                questionId : questionId,
+                                                optionId : optionId
+                                            });
+                                            await questionOption1.save().catch(err3=>{
+                                                res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            })
+                                        }
+                                    }
+                                    if(questions[i].qType==="checkBox"){
+                                        if(questions[i].right.includes(j)){
+                                            const questionOption1 = new questionOption({
+                                                questionId : questionId,
+                                                optionId : optionId
+                                            });
+                                            await questionOption1.save().catch(err3=>{
+                                                res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            })
+                                        }
+                                    }
+                                    
+                                }).catch(err2=>{
+                                    res.status(400).json({err:err2,msg : "option gone wrong"})
+                                })
+                            }
+                        }
+                    }).catch(err1=>{
+                        res.status(400).json({err:err1,msg : "question gone wrong"})
+                    })
+                }
+                else{
+                    const question1 = {
+                        testId : testId,
+                        desc :  questions[i].desc,
+                        qType : questions[i].qType,
+                        marks : questions[i].marks
+                    };
+                    await question.findOneAndUpdate({questionId:questions[i].questionId},{$set : question1})
+                    .then(async (result1)=>{
+                        console.log("Q"+i);
+                        await questionOption.remove({questionId : questions[i].questionId}).then(re=>{
+                            console.log("RIGHT OPTIONS DELETED SUCCESFULLY");
+                            console.log(re);
+                        }).catch(err=>{
+                            res.status(400).json({status:400,msg : "deleting right went wrong...",err});
+                        })
+
+                        await option.deleteMany({questionId : questions[i].questionId}).then(re=>{
+                            console.log("OPTIONS DELETED SUCCESFULLY");
+                            console.log(re);
+                        }).catch(err=>{
+                            res.status(400).json({status:400,msg : "deleting options went wrong...",err});
+                        })
+                        const questionId = result1.questionId;
+                        if(questions[i].qType==="mcqs" || questions[i].qType==="checkBox"){
+                            const opts = questions[i].options;
+                            // console.log(opts);
+                            for(j=0;j<opts.length;j++){
+                                
+                                const option1 = new option({
+                                    questionId : questionId,
+                                    desc : opts[j].desc
+                                });
+                                await option1.save().then(async (result2)=>{
+                                    const optionId = result2.optionId;
+                                    if(questions[i].qType==="mcqs"){
+                                        if(j===parseInt(questions[i].right)){
+                                            const questionOption1 = new questionOption({
+                                                questionId : questionId,
+                                                optionId : optionId
+                                            });
+                                            await questionOption1.save().catch(err3=>{
+                                                console.log("CASE 1");
+                                                console.log(questionId,optionId);
+                                                res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            })
+                                        }
+                                    }
+                                    if(questions[i].qType==="checkBox"){
+                                        if(questions[i].right.includes(j)){
+                                            const questionOption1 = new questionOption({
+                                                questionId : questionId,
+                                                optionId : optionId
+                                            });
+                                            await questionOption1.save().catch(err3=>{
+                                                console.log("CASE 2");
+                                                console.log(questionId,optionId);
+                                                res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            })
+                                        }
+                                    }
+                                    
+                                }).catch(err2=>{
+                                    res.status(400).json({err:err2,msg : "option gone wrong"})
+                                })
+                            }
+                        }
+                    }).catch(err1=>{
+                        console.log("Q"+i);
+                        res.status(400).json({err:err1,msg : "question gone wrong"})
+                    })
+                }
+            }
+            res.status(200).json({status:200,msg : "Test Updated Succesfully",result});
+        }
+    }).catch(err=>{
+        res.status(400).json({err:err,msg : "test gone wrong"})
+    })
+}
+
 const getTests = async (req,res)=>{
     const token  = req.headers.authorization.split(" ")[1];
     console.log(req.body);
@@ -778,4 +968,4 @@ const uploadResult = async (req,res)=>{
 
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
                     ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest,getSubmissions,
-                    reviewTest,uploadResult};
+                    reviewTest,uploadResult,editTest};
