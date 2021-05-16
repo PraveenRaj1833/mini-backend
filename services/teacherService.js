@@ -326,6 +326,7 @@ const createTest = async (req,res)=>{
                 })
             }
             res.status(200).json({msg : "test Created succesfully",result});
+            
         }).catch(err=>{
             res.status(400).json({err,msg : "test gone wrong"})
         })
