@@ -296,7 +296,7 @@ const getTestDetails = async (req,res)=>{
            
                 await studentTest.findOne({studentId : req.body.studentId,testId : req.body.testId}).then(result=>{
                     if(result!==null){
-                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                        res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                     }
                 }).catch(err=>{
                     res.status(400).json({status : 400, msg : "something went wrong 1", err});
@@ -312,7 +312,7 @@ const getTestDetails = async (req,res)=>{
                             // if(result1.testType==="desc"){
                                 await studentOption.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
                                     if(resultt!==null){
-                                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                        res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                                     }
                                 }).catch(err=>{
                                     res.status(400).json({status : 400, msg : "something went wrong 2", err});
@@ -322,7 +322,7 @@ const getTestDetails = async (req,res)=>{
                         else{
                             await studentAnswer.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
                                 if(resultt!==null){
-                                    res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                    res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                                 }
                             }).catch(err=>{
                                 res.status(400).json({status : 400, msg : "something went wrong 3", err});
@@ -369,7 +369,7 @@ const attempTest = async (req,res)=>{
            
                 await studentTest.findOne({studentId : req.body.studentId,testId : req.body.testId}).then(result=>{
                     if(result!==null){
-                        res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                        res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                     }
                 }).catch(err=>{
                     res.status(400).json({status : 400, msg : "something went wrong 1", err});
@@ -386,7 +386,7 @@ const attempTest = async (req,res)=>{
                         if(result1.testType==="desc"){
                             await studentOption.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
                                 if(resultt!==null){
-                                    res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                    res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                                 }
                             }).catch(err=>{
                                 res.status(400).json({status : 400, msg : "something went wrong 2", err});
@@ -411,7 +411,7 @@ const attempTest = async (req,res)=>{
                     else{
                         await studentAnswer.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
                             if(resultt!==null){
-                                res.status(203).json({status:203,msg : "You cannot attempt the test again"});
+                                res.status(203).json({status:203,msg : "You cannot attempt the test again",result:result1});
                             }
                         }).catch(err=>{
                             res.status(400).json({status : 400, msg : "something went wrong 3", err});
