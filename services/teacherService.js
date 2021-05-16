@@ -257,7 +257,7 @@ const createTest = async (req,res)=>{
     console.log(req.body);
     const pl =await jwt.verify(token,"teacher",(err,payload)=>{
         if(err){
-            res.status(402).json({status : 402,err});
+            res.status(402).json({status : 402,err,status : 402});
         } else {
             return payload;
         }
@@ -275,7 +275,7 @@ const createTest = async (req,res)=>{
 
     const courseExist = await course.findOne({courseId : req.body.courseId});
     if(courseExist===null)
-        res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId});
+        res.status(400).json({msg : "Course Id Does Not Exist",courseId : req.body.courseId,status : 400});
     else{
         await test1.save().then(async (result)=>{
             const testId = result.testId;
@@ -307,7 +307,7 @@ const createTest = async (req,res)=>{
                                             optionId : optionId
                                         });
                                         await questionOption1.save().catch(err3=>{
-                                            res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            res.status(400).json({err : err3,msg : "questionOption gone wrong",status : 400})
                                         })
                                     }
                                 }
@@ -318,21 +318,21 @@ const createTest = async (req,res)=>{
                                             optionId : optionId
                                         });
                                         await questionOption1.save().catch(err3=>{
-                                            res.status(400).json({err : err3,msg : "questionOption gone wrong"})
+                                            res.status(400).json({err : err3,msg : "questionOption gone wrong",status : 400})
                                         })
                                     }
                                 }
                                 
                             }).catch(err2=>{
-                                res.status(400).json({err:err2,msg : "option gone wrong"})
+                                res.status(400).json({err:err2,msg : "option gone wrong",status : 400})
                             })
                         }
                     }
                 }).catch(err1=>{
-                    res.status(400).json({err:err1,msg : "question gone wrong"})
+                    res.status(400).json({err:err1,msg : "question gone wrong",status : 400})
                 })
             }
-            res.status(200).json({msg : "test Created succesfully",result});
+            res.status(200).json({msg : "test Created succesfully",result,status : 200});
             console.log("Ready for emails");
             const mails = [];
             await studentCourse.find({courseId : req.body.courseId}).then((async (results)=>{
@@ -383,7 +383,7 @@ const createTest = async (req,res)=>{
                 })
             })
         }).catch(err=>{
-            res.status(400).json({err,msg : "test gone wrong"})
+            res.status(400).json({err,msg : "test gone wrong",status : 400})
         })
     }
 }
