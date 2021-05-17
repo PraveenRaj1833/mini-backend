@@ -18,7 +18,7 @@ const studentOptionSchema = mongoose.Schema({
     }
 })
 
-studentOptionSchema.index({questionId:1,studentId:1},{unique : true});
+studentOptionSchema.index({questionId:1,studentId:1,optionId:1},{unique : true});
 
 const studentOption = mongoose.model('studentOption',studentOptionSchema);
 

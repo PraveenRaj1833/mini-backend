@@ -10,6 +10,10 @@ const test = require('../models/testModel');
 const question = require('../models/questionModel');
 const option = require('../models/optionModel');
 const questionOption = require('../models/questionOptionModel');
+const student = require('../models/studentModel');
+
+const mailer = require('nodemailer');
+const schedule = require('node-schedule');
 
 const addTeacher = async (req,res)=>{
     console.log(req.body.name , req.body.teacherId , req.body.password );
@@ -326,7 +330,55 @@ const createTest = async (req,res)=>{
                 })
             }
             res.status(200).json({msg : "test Created succesfully",result});
-            
+            console.log("Ready for emails");
+            const mails = [];
+            await studentCourse.find({courseId : req.body.courseId}).then((async (results)=>{
+                for(i=0;i<results.length;i++){
+                    const student1 =  await student.findOne({studentId : results[i].studentId});
+                    if(student1!==null)
+                        mails.push(student1.email);
+                }
+            }))
+            console.log(mails);
+            var transporter = mailer.createTransport({
+                service : 'gmail',
+                auth : {
+                    user : 'emsminiproject@gmail.com',
+                    pass : 'mee3@miniproject'
+                }
+            });
+            var schDate = new Date(req.body.dateTime);
+            var dt = schDate.toString();
+            var mailOptions = {
+                from : 'emsminiproject@gmail.com',
+                to : mails,
+                subject : `Remainder - ${req.body.testName}`,
+                html : `<h2>${courseExist.courseName}</h2>
+                            <p>Your test is scheduled at ${dt}</p>`,
+                text : `${courseExist.courseName} , Your test is scheduled at ${dt}`
+            }
+            var pdate = new Date();
+            var sendDate;
+            var diff = schDate.getTime()-pdate.getTime();
+            diff = diff/1000;
+            diff = diff/60;
+            if(diff<62){
+                    sendDate = new Date(pdate);
+                    sendDate.setMinutes(sendDate.getMinutes()+2);
+                }
+            else{
+                sendDate = new Date(schDate);
+                sendDate.setHours(sendDate.getHours()-1);
+            }
+            const job = schedule.scheduleJob(sendDate,()=>{
+                console.log("sending emails");
+                transporter.sendMail(mailOptions,(error,info)=>{
+                    if(error)
+                        console.log(error);
+                    else
+                        console.log("Emails sent"+info.response);
+                })
+            })
         }).catch(err=>{
             res.status(400).json({err,msg : "test gone wrong"})
         })

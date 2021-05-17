@@ -509,18 +509,23 @@ const submitTest = async (req,res)=>{
     // }
     res.status(200).json({status : 200,msg : "Test Submitted Succesfully"});
     if(req.body.testType==="mcqs"){
-        calculateResult(studentId, answers, testId)
+        await calculateResult(studentId, answers, testId)
     }
 }
 
 const calculateResult = async (studentId, answers, testId)=>{
     var marks = 0;
+    console.log("calculating..");
+    console.log(studentId,testId,answers);
     for(i=0;i<answers.length;i++){
         if(answers[i].qType==="mcqs"){
             await questionOption.findOne({questionId : answers[i].questionId}).then(async (result)=>{
                 if(result!==null){
                     if(answers[i].optionId===result.optionId)
-                        marks+=answers[i].marks;
+                    {
+                        marks+=parseInt(answers[i].marks);
+                        console.log(marks);
+                    }
                 }
             }).catch(err=>{
                 console.log(err);
@@ -541,7 +546,10 @@ const calculateResult = async (studentId, answers, testId)=>{
                             }
                         }
                         if(f===0 && j===result.length)
-                            marks+=answers[i].marks;
+                        {
+                            marks+=parseInt(answers[i].marks);
+                            console.log(marks);
+                        }
                     }
                 }
             })
@@ -552,6 +560,7 @@ const calculateResult = async (studentId, answers, testId)=>{
         testId : testId,
         marks : marks
     });
+    console.log(studentTest1);
     studentTest1.save().then(result=>console.log(result))
             .catch(err=>{
                 console.log(err);
