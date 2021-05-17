@@ -7,7 +7,7 @@ const studentAnswerSchema = mongoose.Schema({
         required : true
     },
     questionId : {
-        type : String,
+        type : Number,
         trim : true,
         required : true
     },

@@ -7,12 +7,12 @@ const studentOptionSchema = mongoose.Schema({
         required : true
     },
     questionId : {
-        type : String,
+        type : Number,
         trim : true,
         required : true
     },
     optionId : {
-        type : String,
+        type : Number,
         trim : true,
         required : true
     }

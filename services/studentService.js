@@ -672,7 +672,7 @@ const submitTest = async (req,res)=>{
             marks : 0,
             attemptDate : req.body.attemptDate,
             submitDate : req.body.submitDate,
-            evaluated : true
+            evaluated : false
         });
         studentTest1.save().then(result6=>console.log(result6))
             .catch(err=>console.log(err));
