@@ -694,5 +694,30 @@ const reviewTest = async (req,res)=>{
     })    
 }
 
+const getSubmissions = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    await studentCourse.find({courseId : req.body.courseId}).then(async (result)=>{
+        const submissions=[];
+        for(i=0;i<result.length;i++){
+            const st = await studentTest.findOne({studentId : result[i].studentId,testId : req.body.tesyId});
+            if(st!==null){
+                submissions.push({studentId : result[i].studentId, marks : st.marks});
+            }
+            else{
+                
+            }
+        }
+    })
+}
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
                     ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest};

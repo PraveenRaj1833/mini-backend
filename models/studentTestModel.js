@@ -15,6 +15,18 @@ const studentTestSchema = mongoose.Schema({
         type : Number,     //nod double
         trim : true,
         required : true
+    },
+    attemptDate : {
+        type : Date,
+        required : true
+    },
+    submitDate : {
+        type : Date,
+        required : true
+    },
+    evaluated : {
+        type : Boolean,
+        required : true,
     }
 })
 
