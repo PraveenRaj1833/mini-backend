@@ -351,7 +351,188 @@ const getTestDetails = async (req,res)=>{
     }).catch(err1 => {
         res.status(400).json({status : 400,err : err1,msg:"something went wrong"});
     })
+}
 
+const getResult = async (req,res)=>{
+    const token = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    const studentId = req.body.studentId;
+    const testId = req.body.testId;
+
+    await studentTest.findOne({studentId : studentId, testId : testId}).then(result=>{
+        if(result===null){
+            res.status(200).json({result,eval : false,status:200});
+        }
+        else{
+            res.status(200).json({result,eval : true,status:200});
+        }
+    }).catch(err=>{
+        res.status(400).json({status:400,err,msg : "something went wrong"});
+    })
+}
+
+const reviewTest = async (req,res)=>{
+    const token = req.headers.authorization.split(" ")[1];
+    const pl =await jwt.verify(token,"student",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    await test.findOne({testId : req.body.testId}).then(async (result1) => {
+        console.log(result1);
+        if(result1!==null){
+                const answers = [];
+                await studentTest.findOne({studentId : req.body.studentId,testId : req.body.testId}).then(async (result)=>{
+                    if(result===null){
+                        res.status(203).json({status:203,msg : "You have not attempted the test",result:result1});
+                    }
+                    else{
+                        await question.find({testId : req.body.testId}).then(async (result2)=>{
+                            console.log(result2);
+                            const questions = [];
+                            for(i=0;i<result2.length;i++){
+                                console.log("Q"+i);
+                                console.log(result2[i].questionId);
+                                if(result2[i].qType==="mcqs" || result2[i].qType==="checkBox"){
+                                    var right;
+                                    if(result2[i].qType==="mcqs"){
+                                        await studentOption.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                            if(resultt!==null){
+                                                answers.push({
+                                                    questionId : result2[i].questionId,
+                                                    optionId : resultt.optionId
+                                                })
+                                            }
+                                            else{
+                                                answers.push({
+                                                    questionId : result2[i].questionId,
+                                                    optionId : ''
+                                                })
+                                            }
+                                        }).catch(err=>{
+                                            res.status(400).json({status : 400, msg : "something went wrong 2", err});
+                                        });
+
+                                        right = await questionOption.findOne({questionId : result2[i].questionId})
+                                        .catch(err3=>{
+                                            res.status(400).json({err:err3,msg : "right went wrong",status:400});
+                                        });
+                                        console.log(right);
+                                        right = parseInt(right.optionId);
+                                    }
+                                    else{
+                                        await studentOption.find({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                            if(resultt!==null){
+                                                const options = resultt.map((opt,index)=>{
+                                                                return opt.optionId
+                                                            })
+                                                answers.push({
+                                                    questionId : result2[i].questionId,
+                                                    options : options
+                                                })
+                                            }
+                                            else{
+                                                answers.push({
+                                                    questionId : result2[i].questionId,
+                                                    optionId : []
+                                                })
+                                            }
+                                        }).catch(err=>{
+                                            res.status(400).json({status : 400, msg : "something went wrong 3", err});
+                                        })
+                                        const right1 = await questionOption.find({questionId : result2[i].questionId})
+                                        .catch(err3=>{
+                                            res.status(400).json({err:err3,msg : "right went wrong",status:400});
+                                        });
+                                        console.log(right1);
+                                        right = right1.map((r1,index)=>{return parseInt(r1.optionId)});
+                                        console.log(right);
+                                    }
+                                    
+            
+                                    const options =  await option.find({questionId : result2[i].questionId})
+                                    .catch(err2=>{
+                                        res.status(400).json({err:err2,msg : "options went wrong",status:400});
+                                    });
+                                    console.log(options);
+            
+                                    const obj = {
+                                        questionId : result2[i].questionId,
+                                        desc : result2[i].desc,
+                                        qType : result2[i].qType,
+                                        marks : result2[i].marks,
+                                        options : options,
+                                        right : right
+                                    };
+                                    questions.push(obj);
+                                }
+                                else{
+                                    await studentAnswer.findOne({studentId : req.body.studentId, questionId:result2[i].questionId}).then(resultt=>{
+                                        if(resultt!==null){
+                                            answers.push({
+                                                questionId :result2[i].questionId,
+                                                answer : resultt.description,
+                                                marks : resultt.marks
+                                            })
+                                        }
+                                        else{
+                                            answers.push({
+                                                questionId :result2[i].questionId,
+                                                answer : '',
+                                                marks : 0
+                                            })
+                                        }
+                                    }).catch(err=>{
+                                        res.status(400).json({status : 400, msg : "something went wrong 3", err});
+                                    })
+            
+                                    const obj = {
+                                        questionId : result2[i].questionId,
+                                        desc : result2[i].desc,
+                                        qType : result2[i].qType,
+                                        marks : result2[i].marks,
+                                    };
+                                    questions.push(obj);
+                                }
+                            }
+                            const resultLast = {
+                                testId : result1.testId,
+                                totalMarks : result1.totalMarks,
+                                dateTime : result1.dateTime,
+                                duration : result1.duration,
+                                courseId : result1.courseId,
+                                testName : result1.testName,
+                                testType : result1.testType,
+                                questions : questions,
+                                answers : answers,
+                                marks : result.marks
+                            }
+                            res.status(200).json({status : 200,result:resultLast});
+                        }).catch(err4=>{
+                            console.log("hihi",err4);
+                            res.status(400).json({err:err4,msg : "questions went wrong",status:400});
+                        });
+                    }
+                }).catch(err=>{
+                    res.status(400).json({status : 400, msg : "something went wrong 1", err});
+                })           
+        }
+        else{
+            res.status(400).json({status : 400,msg:"test Id not Found"});
+        }
+    }).catch(err1 => {
+        res.status(400).json({status : 400,err : err1,msg:"something went wrong"});
+    })    
 }
 
 const attempTest = async (req,res)=>{
@@ -568,4 +749,4 @@ const calculateResult = async (studentId, answers, testId)=>{
 }
 
 module.exports = {addStudent, getStudents,getStudentById,registerCourse,getCourses,studentLogin,
-    studentUpdate,passwordUpdate,attempTest,getTests,submitTest,getTestDetails};
+    studentUpdate,passwordUpdate,attempTest,getTests,submitTest,getTestDetails,getResult,reviewTest};
