@@ -233,7 +233,7 @@ const passwordUpdate = async (req,res)=>{
         if(req.body.newPassword === req.body.confirmPassword){
             const passwd = await bcryptjs.hash(req.body.newPassword,10);
             const login2 = {
-                userId : req.body.userId,
+                // userId : req.body.userId,
                 password : passwd
             };
             login.findOneAndUpdate({userId:req.body.userId},{$set : login2},{new:true}).then(result => {
@@ -654,7 +654,7 @@ const reviewTest = async (req,res)=>{
                                         answers.push({
                                             questionId :result2[i].questionId,
                                             answer : resultt.description,
-                                            marks : ''
+                                            marks : resultt.marks===null?'':resultt.marks
                                         })
                                     }
                                     else{
@@ -689,6 +689,8 @@ const reviewTest = async (req,res)=>{
                             testType : result1.testType,
                             attemptDate : result.attemptDate,
                             submitDate : result.submitDate,
+                            evaluated : result.evaluated,
+                            studentMarks : result.marks,
                             questions : questions,
                             answers : answers
                         }
@@ -739,5 +741,41 @@ const getSubmissions = async (req,res)=>{
     })
 }
 
+const uploadResult = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    const studentId = req.body.studentId;
+    const testId = req.body.testId;
+    const answers = req.body.answers;
+    var total=0;
+    for(i=0;i<answers.length;i++){
+        total+=answers[i].marks;
+        if(answers[i].qType==="desc"){
+            await studentAnswer.findOneAndUpdate({studentId : studentId,questionId : answers[i].questionId},
+                {$set : {marks : answers[i].marks}},{new:true}).then(result=>{
+                    console.log(result);
+                }).catch(err=>{
+                    res.status(400).json({status : 400,mag : "somethingg went wrong",err});
+                })
+        }
+    }
+    await studentTest.findOneAndUpdate({studentId : studentId, testId : testId},
+        {$set : {marks:total,evaluated:true}},{new:true}).then(result1=>{
+            // console.log(result1);
+            res.status(200).json({status : 200, msg : "result uploaded succesfully",result:result1});
+        }).catch(err1=>{
+            res.status(400).json({status : 400,msg : "something went wrong",err:err1});
+        })
+}
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
-                    ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest,getSubmissions,reviewTest};
+                    ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest,getSubmissions,
+                    reviewTest,uploadResult};

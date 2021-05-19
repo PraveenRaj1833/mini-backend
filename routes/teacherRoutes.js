@@ -1,6 +1,6 @@
 const express = require('express')
 const {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,
-    passwordUpdate,getStudentsByCourse,createTest,getTests,getTestDetails,deleteTest,getSubmissions, reviewTest} = require('../services/teacherService')
+    passwordUpdate,getStudentsByCourse,createTest,getTests,getTestDetails,deleteTest,getSubmissions, reviewTest, uploadResult} = require('../services/teacherService')
 
 const cors = require('cors')
 const app = express()
@@ -35,5 +35,7 @@ app.delete('/deleteTest/:testId',deleteTest);
 app.post('/getSubmissions',getSubmissions);
 
 app.post('/reviewTest',reviewTest);
+
+app.post('/uploadResult',uploadResult)
 
 module.exports = app;
