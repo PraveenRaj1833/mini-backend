@@ -416,7 +416,7 @@ const reviewTest = async (req,res)=>{
                                             else{
                                                 answers.push({
                                                     questionId : result2[i].questionId,
-                                                    optionId : []
+                                                    options : []
                                                 })
                                             }
                                         }).catch(err=>{
@@ -426,7 +426,7 @@ const reviewTest = async (req,res)=>{
                                     else{
                                         answers.push({
                                             questionId : result2[i].questionId,
-                                            optionId : []
+                                            options : []
                                         })
                                     }
                                     

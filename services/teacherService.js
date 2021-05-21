@@ -613,7 +613,7 @@ const reviewTest = async (req,res)=>{
                                             console.log("UN - attempted");
                                             answers.push({
                                                 questionId : result2[i].questionId,
-                                                optionId : []
+                                                options : []
                                             })
                                         }
                                     }).catch(err=>{
