@@ -50,15 +50,18 @@ const addTeacher = async (req,res)=>{
                 await login1.save().then(result1=>{
                     res.status(200).json({msg:"inserted Succesfully",result,status:200});
                 }).catch(async (err)=>{
-                    await teacher.deleteOne({teacherId:req.body.teacherId}).then(result2=>{
+                    await teacher.deleteOne({teacherId : req.body.teacherId}).then(result2=>{
                         res.status(400).json({msg : "failed to insert",result:result2,err:err,status:400});
                     }).catch(err1=>{
-                        res.status(200).json({msg: "failed to insert",status:400,err:err1})
+                        res.status(400).json({msg: "failed to insert",status:400,err:err1})
                     })
                 });
             }).catch((err2)=>{
                 res.status(400).json({msg : "something went wrong",err:err2,status:400});
             });
+        }
+        else{
+            res.status(400).json({msg : "Invalid Branch Id",err:err2,status:400});
         }
     }).catch(err=>{
         res.status(400).json({msg : "something went wrong",err:err,status:400});
@@ -133,8 +136,7 @@ const getCourses = async (req,res) => {
         res.status(200).json({status:200,results});
     }).catch(err=>{
         res.status(400).json({status:400,err});
-    })
-    
+    })    
 }
 
 const getStudentsByCourse = async (req,res) => {
@@ -351,6 +353,8 @@ const createTest = async (req,res)=>{
                 }
             });
             var schDate = new Date(req.body.dateTime);
+            schDate.setHours(schDate.getHours()+5);
+            schDate.setMinutes(schDate.getMinutes()+30);
             var dt = schDate.toString();
             var mailOptions = {
                 from : 'emsminiproject@gmail.com',
@@ -365,14 +369,14 @@ const createTest = async (req,res)=>{
             var diff = schDate.getTime()-pdate.getTime();
             diff = diff/1000;
             diff = diff/60;
-            if(diff<62){
-                    sendDate = new Date(pdate);
-                    sendDate.setMinutes(sendDate.getMinutes()+2);
-                }
-            else{
-                sendDate = new Date(schDate);
-                sendDate.setHours(sendDate.getHours()-1);
-            }
+            // if(diff<62){
+                sendDate = new Date(pdate);
+                sendDate.setMinutes(sendDate.getMinutes()+2);
+                // }
+            // else{
+            //     sendDate = new Date(schDate);
+            //     sendDate.setHours(sendDate.getHours()-1);
+            // }
             const job = schedule.scheduleJob(sendDate,()=>{
                 console.log("sending emails");
                 transporter.sendMail(mailOptions,(error,info)=>{
@@ -409,6 +413,18 @@ const editTest = async (req,res)=>{
         dateTime : req.body.dateTime,
         totalMarks : req.body.totalMarks,
         courseId : req.body.courseId
+    }
+
+    const prev = await test.findOne({testId : req.body.testId}).catch(err=>{
+        res.status(400).json({msg : "something went wrong",status : 400,err});
+    })
+
+    const mailSend = true;
+    if(prev!==null){
+        const prevDate = new Date(prev.dateTime);
+        const newDate = new Date(req.body.dateTime);
+        if(prevDate.getTime()===newDate.getTime())
+            mailSend=false;
     }
 
     await test.findOneAndUpdate({testId : req.body.testId},{$set : uptest},{new:true}).then(async (result)=>{
@@ -572,6 +588,60 @@ const editTest = async (req,res)=>{
                 }
             }
             res.status(200).json({status:200,msg : "Test Updated Succesfully",result});
+            if(mailSend===true){
+            
+                console.log("Ready for updated emails");
+                const mails = [];
+                await studentCourse.find({courseId : req.body.courseId}).then((async (results)=>{
+                    for(i=0;i<results.length;i++){
+                        const student1 =  await student.findOne({studentId : results[i].studentId});
+                        if(student1!==null)
+                            mails.push(student1.email);
+                    }
+                }))
+                // console.log(mails);
+                var transporter = mailer.createTransport({
+                    service : 'gmail',
+                    auth : {
+                        user : 'emsminiproject@gmail.com',
+                        pass : 'mee3@miniproject'
+                    }
+                });
+                var schDate = new Date(req.body.dateTime);
+                schDate.setHours(schDate.getHours()+5);
+                schDate.setMinutes(schDate.getMinutes()+30);
+                var dt = schDate.toString();
+                var mailOptions = {
+                    from : 'emsminiproject@gmail.com',
+                    to : mails,
+                    subject : `Remainder - ${req.body.testName}`,
+                    html : `<h2>${courseExist.courseName}</h2>
+                                <p>Your test is rescheduled to ${dt}</p>`,
+                    text : `${courseExist.courseName} , Your test is scheduled at ${dt}`
+                }
+                var pdate = new Date();
+                var sendDate;
+                var diff = schDate.getTime()-pdate.getTime();
+                diff = diff/1000;
+                diff = diff/60;
+                // if(diff<62){
+                    sendDate = new Date(pdate);
+                    sendDate.setMinutes(sendDate.getMinutes()+2);
+                    // }
+                // else{
+                //     sendDate = new Date(schDate);
+                //     sendDate.setHours(sendDate.getHours()-1);
+                // }
+                const job = schedule.scheduleJob(sendDate,()=>{
+                    console.log("sending emails");
+                    transporter.sendMail(mailOptions,(error,info)=>{
+                        if(error)
+                            console.log(error);
+                        else
+                            console.log("Emails sent"+info.response);
+                    })
+                })
+            }
         }
     }).catch(err=>{
         res.status(400).json({err:err,msg : "test gone wrong"})
