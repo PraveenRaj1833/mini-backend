@@ -1036,6 +1036,149 @@ const uploadResult = async (req,res)=>{
         })
 }
 
+const changeAnswer = async (req,res)=>{
+    const token  = req.headers.authorization.split(" ")[1];
+    console.log(req.body);
+    const pl =await jwt.verify(token,"teacher",(err,payload)=>{
+        if(err){
+            res.status(402).json({status : 402,err});
+        } else {
+            return payload;
+        }
+    });
+
+    const pquestion = req.body.pquestion;
+    var newRight = req.body.newRight;
+    if(pquestion.qType==="mcqs"){
+        // await questionOption.deleteOne({questionId:pquestion.questionId}).catch(err=>{
+        //     console.log(err);
+        //     res.status(400).json({status:400,err,msg : "something went wrong 1"});
+        // })
+        for(i=0;i<pquestion.options.length;i++){
+            if(i===newRight){
+                newRight = pquestion.options[i].optionId;
+                questionOption.findOneAndUpdate({questionId:pquestion.questionId},
+                    {$set:{optionId : pquestion.options[i].optionId}},{new:true}).then(result=>{
+                        console.log("updatee donee");
+                        console.log(result);
+                    })
+                    .catch(err=>{
+                        console.log(err);
+                        res.status(400).json({status : 400,msg : "Something went wrong 1",err});
+                    });
+                break;
+            }
+        }
+        await studentTest.find({testId : req.body.testId}).then(async (results)=>{
+            for(i=0;i<results.length;i++){
+                var marks = results[i].marks;
+                var opt = await studentOption.findOne({questionId : pquestion.questionId,studentId : results[i].studentId})
+                    .catch(err=>{
+                        console.log(err);
+                        res.status(400).json({status : 400,msg : "Something went wrong 2",err});
+                    });
+                if(opt!==null){
+                    if(pquestion.right===opt.optionId){
+                        marks-=parseInt(pquestion.marks);
+                    }
+                    if(newRight===opt.optionId){
+                        marks+=parseInt(pquestion.marks);
+                    }
+                    await studentTest.updateOne({testId : req.body.testId,studentId : results[i].studentId},
+                            {$set : {marks : marks}}).then(resultt=>{
+                                console.log("update succesful "+results[i].studentId);
+                            })
+                }
+
+            }
+            res.status(200).json({status : 200,msg : "Succesfully updated"});
+        }).catch(err=>{
+                console.log(err);
+                res.status(400).json({status : 400,msg : "Something went wrong 3",err});
+            });
+    }
+    else{
+        await questionOption.deleteMany({questionId:pquestion.questionId}).catch(err=>{
+            console.log(err);
+            res.status(400).json({status:400,err,msg : "something went wrong 4"});
+        });
+        const ri8 = [];
+        for(i=0;i<newRight.length;i++){
+            ri8.push(pquestion.options[newRight[i]].optionId);
+            const questionOption1 = new questionOption({
+                questionId : pquestion.questionId,
+                optionId : pquestion.options[newRight[i]].optionId
+            })
+            questionOption1.save().then(resultt=>{
+                console.log("option saved "+pquestion.options[newRight[i]]);
+                console.log(resultt);
+            }).catch(err=>{
+                console.log(err);
+                res.status(400).json({status : 400,msg : "Something went wrong 5",err});
+            });
+        }
+
+        await studentTest.find({testId : req.body.testId}).then(async (results)=>{
+            for(i=0;i<results.length;i++){
+                var marks = results[i].marks;
+                var opt = await studentOption.find({questionId : pquestion.questionId,studentId : results[i].studentId})
+                    .catch(err=>{
+                        console.log(err);
+                        res.status(400).json({status : 400,msg : "Something went wrong 2",err});
+                    });
+                if(opt.length!==0){
+                    var f=0;
+                    if(opt.length===pquestion.right.length){
+                        for(j=0;j<opt.length;j++){
+                            if(pquestion.right.includes(opt[j].optionId)){
+                                continue;
+                            }
+                            else{
+                                f=1;
+                                break;
+                            }
+                        }
+                        if(f===0 && j===opt.length)
+                        {
+                            marks-=parseInt(pquestion.marks);
+                            console.log(marks);
+                        }
+                    }
+                    f=0;
+                    if(opt.length===ri8.length){
+                        for(j=0;j<opt.length;j++){
+                            if(ri8.includes(opt[j].optionId)){
+                                continue;
+                            }
+                            else{
+                                f=1;
+                                break;
+                            }
+                        }
+                        if(f===0 && j===opt.length)
+                        {
+                            marks+=parseInt(pquestion.marks);
+                            console.log(marks);
+                        }
+                    }
+                    await studentTest.updateOne({testId : req.body.testId,studentId : results[i].studentId},
+                            {$set : {marks : marks}}).then(resultt=>{
+                                console.log("update 2 succesful "+results[i].studentId);
+                            })
+                }
+
+            }
+            console.log("sending response");
+            res.status(200).json({status : 200,msg : "succesfully updated"});
+        }).catch(err=>{
+                console.log(err);
+                console.log("edo error");
+                res.status(400).json({status : 400,msg : "Something went wrong 3",err});
+            });   
+    }
+}
+
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
                     ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest,getSubmissions,
-                    reviewTest,uploadResult,editTest};
+                    reviewTest,uploadResult,editTest,changeAnswer};
