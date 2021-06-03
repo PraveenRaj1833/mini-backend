@@ -1179,6 +1179,116 @@ const changeAnswer = async (req,res)=>{
 }
 
 
+const forgotPassword = async (req,res)=>{
+    const teacherId = req.body.userId;
+    console.log(teacherId);
+    console.log(req.body);
+    const teacher1 = await teacher.findOne({teacherId : teacherId}).catch(err=>{
+                        console.log(err);
+                        res.status(400).json({status:400,msg:"something went wrong 1"});
+                    })
+    if(teacher1!==null){
+        const login1 = await login.findOne({userId : teacherId}).catch(err=>{
+                        console.log(err);
+                        res.status(400).json({status:400,msg:"something went wrong 2"});
+                    });
+        if(login1!==null){
+            var code = login1.password.substring(login1.password.length-4);
+            code = code+login1.password.substring(0,4);
+            var transporter = mailer.createTransport({
+                service : 'gmail',
+                auth : {
+                    user : 'emsminiproject@gmail.com',
+                    pass : 'mee3@miniproject'
+                }
+            });
+            var mailOptions = {
+                from : 'emsminiproject@gmail.com',
+                to : teacher1.email,
+                subject : `Password Change`,
+                html : `<h2>${code} is your code to change password</h2>
+                            <p>Ignore if you haven't tried to change your password</p>`,
+                text : `$${code} is your code to change password`
+            }
+            transporter.sendMail(mailOptions,(error,info)=>{
+                if(error){
+                    console.log(error);
+                    res.status(400).json({status:400,msg : "Error Sending Mail"});
+                }
+                else{
+                    console.log("Emails sent"+info.response);
+                    res.status(200).json({status:200,msg : "code sent succesfully"});
+                }
+            })
+        }
+        else{
+            res.status(400).json({status:400,msg : "Error fetching details"});
+        }
+    }
+    else{
+        res.status(400).json({status:400,msg:"Teacher Id doesn't exist"});
+    }
+}
+
+const verifyCode = async (req,res)=>{
+    const code=req.body.code;
+    const teacherId = req.body.userId;
+    const teacher1 = await teacher.findOne({teacherId : teacherId}).catch(err=>{
+                console.log(err);
+                res.status(400).json({status:400,msg:"something went wrong 1"});
+            })
+    if(teacher1!==null){
+        const login1 = await login.findOne({userId : teacherId}).catch(err=>{
+                console.log(err);
+                res.status(400).json({status:400,msg:"something went wrong 2"});
+            });
+        if(login1!==null){
+            var vcode = login1.password.substring(login1.password.length-4);
+            vcode = vcode+login1.password.substring(0,4);
+            if(code===vcode){
+                res.status(200).json({status:200,msg : "code verified succesfully"});
+            }
+            else{
+                res.status(400).json({status:400,msg : "invalid code"});
+            }
+        }
+        else{
+            res.status(400).json({status:400,msg : "Error fetching details"});
+        }
+    }
+    else{
+        res.status(400).json({status:400,msg:"Teacher Id doesn't exist"});
+    }
+}
+
+const resetPassword = async (req,res)=>{
+    const userId = req.body.userId;
+    const password = req.body.password;
+    const confirmPassword = req.body.confirmPassword;
+    const login1 = await login.findOne({userId : userId}).catch(err=>{
+            console.log(err);
+            res.status(400).json({status:400,msg:"something went wrong 2"});
+        });
+    if(login1!==null){
+        if(password===confirmPassword){
+            const passwd = await bcryptjs.hash(password,10);
+            await login.updateOne({userId : userId},{$set : {password : passwd}}).then(result=>{
+                console.log(result);
+                res.status(200).json({status : 200,msg : "password updated succesfully"});
+            }).catch(err=>{
+                console.log(err);
+                res.status(400).json({status : 400,msg : "something went wrong",err});
+            })
+        }
+        else{
+            res.status(400).json({status:400,msg:"Password and confirm Password Doesn't Match"});
+        }
+    }
+    else{
+        res.status(400).json({status:400,msg:"Teacher Id doesn't exist"});
+    }
+}
+
 module.exports = {addTeacher,getTeachers,getTeacherById,teachCourse,getCourses,teacherLogin,teacherUpdate,passwordUpdate
                     ,getStudentsByCourse,createTest,getTests , getTestDetails,deleteTest,getSubmissions,
-                    reviewTest,uploadResult,editTest,changeAnswer};
+                    reviewTest,uploadResult,editTest,changeAnswer,forgotPassword,verifyCode,resetPassword};
